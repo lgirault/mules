@@ -8,7 +8,6 @@ import cats.instances.option._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.traverse._
-import io.chrisdavenport.mules.UnmanagedCache.TimeSpec
 
 import scala.collection.immutable.Map
 import scala.concurrent.duration._

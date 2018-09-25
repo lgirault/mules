@@ -1,17 +1,17 @@
 package io.chrisdavenport.mules
 
-import cats._
 import cats.data.OptionT
 import cats.effect.{Sync, Clock}
 // For Cats-effect 1.0
 import cats.effect.concurrent.Ref
-import cats.implicits._
+import cats.syntax.functor._
 import scala.concurrent.duration._
+import cats.syntax.flatMap._
 import scala.collection.immutable.Map
 
 class UnmanagedCache[F[_], K, V] private[UnmanagedCache](
                                                           private val ref: Ref[F, Map[K, UnmanagedCache.CacheItem[V]]],
-                                                          val defaultExpiration: Option[UnmanagedCache.TimeSpec]
+                                                          val defaultExpiration: Option[TimeSpec]
 ){
   // Lookups
 
@@ -50,7 +50,7 @@ class UnmanagedCache[F[_], K, V] private[UnmanagedCache](
     *
     * The expiration value is relative to the current clockMonotonic time, i.e. it will be automatically added to the result of clockMonotonic for the supplied unit.
     **/
-  def insertWithTimeout(timeout: Option[UnmanagedCache.TimeSpec])(k: K, v: V)(implicit F: Sync[F], C: Clock[F]) =
+  def insertWithTimeout(timeout: Option[TimeSpec])(k: K, v: V)(implicit F: Sync[F], C: Clock[F]) =
     UnmanagedCache.insertWithTimeout(this)(timeout)(k, v)
 
   // Deleting
@@ -80,25 +80,7 @@ class UnmanagedCache[F[_], K, V] private[UnmanagedCache](
 }
 
 object UnmanagedCache {
-  // Value of Time In Nanoseconds
-  class TimeSpec private (
-    val nanos: Long
-  ) extends AnyVal
-  object TimeSpec {
 
-    def fromDuration(duration: FiniteDuration): Option[TimeSpec] =
-      Alternative[Option].guard(duration > 0.nanos).as(unsafeFromDuration(duration))
-
-    def unsafeFromDuration(duration: FiniteDuration): TimeSpec =
-      new TimeSpec(duration.toNanos)
-
-    def fromNanos(l: Long): Option[TimeSpec] =
-      Alternative[Option].guard(l > 0).as(unsafeFromNanos(l))
-
-    def unsafeFromNanos(l: Long): TimeSpec =
-      new TimeSpec(l)
-
-  }
   private case class CacheItem[A](
     item: A,
     itemExpiration: Option[TimeSpec]
@@ -167,7 +149,7 @@ object UnmanagedCache {
     * Delete an item from the cache. Won't do anything if the item is not present.
     **/
   def delete[F[_]: Sync, K, V](cache: UnmanagedCache[F, K, V])(k: K): F[Unit] =
-    cache.ref.update(m => m - (k)).void
+    cache.ref.update(m => m - k).void
 
   private def isExpired[A](checkAgainst: TimeSpec, cacheItem: CacheItem[A]): Boolean = {
     cacheItem.itemExpiration.fold(false){
