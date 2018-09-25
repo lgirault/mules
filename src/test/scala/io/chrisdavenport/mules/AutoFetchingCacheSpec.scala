@@ -3,7 +3,7 @@ package io.chrisdavenport.mules
 import cats.effect.IO
 import cats.effect.concurrent.Ref
 import cats.syntax.functor._
-import io.chrisdavenport.mules.Cache.TimeSpec
+import io.chrisdavenport.mules.UnmanagedCache.TimeSpec
 import org.specs2.mutable.Specification
 
 import scala.concurrent.ExecutionContext
